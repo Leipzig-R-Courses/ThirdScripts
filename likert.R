@@ -3,17 +3,6 @@ library(psych)
 library(haven)
 library(tidyverse)
 
-kezia_data <- read_sav("Auswertung_Pilottest&Nacherhebung.sav")
-likert_kezia <- select(kezia_data, matches("^[A0|B0].*"))
-likert_kezia <- as.data.frame(likert_kezia)
-
-for (i in 1:length(likert_kezia)) {
-  likert_kezia[,i] <- as.character(likert_kezia[,i])
-  likert_kezia[,i] <- factor(likert_kezia[,i],
-                             levels = c("1", "2", "3", "4", "5"),
-                             ordered = TRUE)
-}
-
 Input =("
   Pooh    Piglet  Tigger
         3       2       4
