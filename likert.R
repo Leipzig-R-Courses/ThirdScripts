@@ -49,7 +49,6 @@ rm(Input)
 likert(Data)
 
 Result = likert(Data)
-Resul2 = likert(likert_kezia)
 
 plot(Result,
      type="bar")
