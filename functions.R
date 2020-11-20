@@ -9,7 +9,7 @@ df <- tibble(
   b = rnorm(10),
   c = rnorm(10),
   d = rnorm(10)
-  )
+)
 
 df
 
@@ -57,6 +57,15 @@ df$b <- rescale01(df$b)
 df$c <- rescale01(df$c)
 df$d <- rescale01(df$d)
 
+df <- tibble(
+  a = rnorm(10),
+  b = rnorm(10),
+  c = rnorm(10),
+  d = rnorm(10)
+)
+
+(df_normalised <-df %>% mutate_all(rescale01))
+
 # still some problems
 x <- c(1:10, Inf)
 rescale01(x)
@@ -94,24 +103,3 @@ for (i in seq_along(df)) {            # 2. sequence
   output[[i]] <- median(df[[i]])      # 3. body
 }
 output
-
-# Exercise 
-# 1. Use the beer bottle function and iterations, so R sings
-#    a drinkin song!
-
-# map purrr
-
-# map() makes a list.
-# map_lgl() makes a logical vector.
-# map_int() makes an integer vector.
-# map_dbl() makes a double vector.
-# map_chr() makes a character vector.
-
-map_dbl(df, mean)
-map_dbl(df, median)
-map_dbl(df, sd)
-
-map_dbl(df, mean, na.rm = T)
-
-
-
