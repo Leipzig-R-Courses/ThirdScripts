@@ -1,59 +1,78 @@
-library(likert)
-library(psych)
-library(haven)
 library(tidyverse)
 
-Input =("
-  Pooh    Piglet  Tigger
-        3       2       4
-        5       4       4
-        4       2       4
-        4       2       4
-        4       1       5
-        4       2       3
-        4       3       5
-        4       2       4
-        5       2       4
-        5       3       3
-        ")
+# creating some fake likert data
 
-Data = read.table(textConnection(Input),header=TRUE)
+answersOptions <- c("strongly disagree", 
+                    "disagree",
+                    "neutral",
+                    "agree",
+                    "strongly agree")
 
+questions <- c("A1","A2","B1","B2")
+peopleAsked <- 70
 
-### Change Likert scores to factor and specify levels
+creatorList <- vector("list", length(questions))
 
-Data$Pooh = factor(Data$Pooh,
-                   levels = c("1", "2", "3", "4", "5"),
-                   ordered = TRUE)
+for (i in seq_along(questions)) {
+  creatorList[[i]] <- sample(answersOptions, peopleAsked, replace = T)
+}
 
-Data$Piglet = factor(Data$Piglet,
-                     levels = c("1", "2", "3", "4", "5"),
-                     ordered = TRUE)
+names(creatorList) <- questions
+likertData <- as_tibble(creatorList)
 
-Data$Tigger = factor(Data$Tigger,
-                     levels = c("1", "2", "3", "4", "5"),
-                     ordered = TRUE)
+likertData %>% 
+  pivot_longer(everything(), names_to = "Question", values_to = "Answer") %>%
+  count(Question, Answer) %>%
+  mutate(Group = map_chr(Question, function(x) str_extract(x, "\\D+"))) %>%
+  select(Group, everything()) %>%
+  group_by(Question) %>%
+  mutate(perc = n / sum(n),
+         perc = perc * 100) %>%
+  ungroup %>%
+  mutate(Question = factor(Question, Question %>% unique %>% rev, ordered = T))-> cleanLikert
 
+cleanLikert %>% 
+  mutate(highs = if_else(Answer %in% c("agree", "strongly agree"), perc, 0), 
+         highs = if_else(Answer != "neutral", highs, perc / 2)) %>%
+  mutate(Answer = factor(Answer, rev(answersOptions), ordered = T)) %>%
+  filter(highs > 0) -> highs
 
-### Double check the data frame
+cleanLikert %>% 
+  mutate(lows = if_else(Answer %in% c("disagree", "strongly disagree"), perc, 0),
+         lows = if_else(Answer != "neutral", lows, perc / 2)) %>%
+  mutate(Answer = factor(Answer, answersOptions, ordered = T)) %>%
+  filter(lows > 0) -> lows
+  
+ggplot() +
+  geom_col(data = highs, aes(Question, highs, fill = Answer)) +
+  geom_col(data = lows, aes(Question, -lows, fill = Answer)) +
+  geom_hline(yintercept = 0, color =c("white")) +
+  coord_flip(ylim = c(-100,100))
 
-library(psych)
+# let's make it prettier ####
+library(ggthemes)
 
-headTail(Data)
+ggplot() +
+  geom_col(data = lows, aes(Question, -lows, fill = Answer)) +
+  geom_col(data = highs, aes(Question, highs, fill = Answer)) + 
+  geom_hline(yintercept = 0, color =c("white")) +
+  coord_flip(ylim = c(-100,100)) +
+  theme_fivethirtyeight() +
+  theme(legend.title=element_blank()) +
+  scale_fill_colorblind(breaks=answersOptions) +
+  labs(title = "Answers in my Survey")
 
-str(Data)
+# Or we could use the likert package (which uses data.frames and not tibbles though) ####
 
-summary(Data)
-rm(Input)
+library(likert)
+  
+likertData2 <-  likertData %>% mutate_all(function(x) factor(x, answersOptions, ordered = T))
 
-likert(Data)
-
-Result = likert(Data)
-
-plot(Result,
+likertData3 <- likert(likertData2 %>% data.frame)
+plot(likertData3,
      type="bar")
 
-plot(Result, 
+plot(likertData3, 
      type="heat",
      low.color = "white", 
      high.color = "blue",
@@ -61,7 +80,8 @@ plot(Result,
      text.size = 4, 
      wrap = 50)
 
-plot(Result,
-    type="density",
-    facet = TRUE, 
-    bw = 0.5)
+plot(likertData3,
+     type="density",
+     facet = TRUE, 
+     bw = 0.5)
+
